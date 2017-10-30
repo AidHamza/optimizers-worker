@@ -1,0 +1,2 @@
+FROM aidhamza/optimizers-worker
+
