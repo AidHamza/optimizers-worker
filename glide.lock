@@ -1,0 +1,18 @@
+hash: 2b9d1e80ef621b4b477ce770a97471a3f860672fc664750ba0b113987076def0
+updated: 2017-10-31T11:36:13.116933915Z
+imports:
+- name: github.com/golang/snappy
+  version: 553a641470496b2327abcac10b36396bd98e45c9
+- name: github.com/ivpusic/grpool
+  version: 28957a27c9441f178d644aa598bac0aad4dd7bba
+- name: github.com/kamilsk/semaphore
+  version: c3021037717c136851e639a0805900c062c73ce0
+- name: github.com/nsqio/go-nsq
+  version: eee57a3ac4174c55924125bb15eeeda8cffb6e6f
+testImports:
+- name: github.com/bmizerany/assert
+  version: b7ed37b82869576c289d7d97fb2bbd8b64a0cb28
+- name: github.com/kr/pretty
+  version: cfb55aafdaf3ec08f0db22699ab822c50091b1c4
+- name: github.com/kr/text
+  version: 7cafcd837844e784b526369c9bce262804aebc60

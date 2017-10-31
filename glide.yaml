@@ -1,0 +1,7 @@
+package: github.com/AidHamza/optimizers-worker
+import:
+- package: github.com/ivpusic/grpool
+- package: github.com/kamilsk/semaphore
+  version: ^4.2.1
+- package: github.com/nsqio/go-nsq
+  version: ^1.0.7
