@@ -8,6 +8,7 @@
 	},
 	"Messaging": {
 		"Host": "127.0.0.1",
-		"Port": "32772"
+		"Port": "32772",
+		"Topic": "imgOptim"
 	}
 }

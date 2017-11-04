@@ -1,12 +1,9 @@
 package main
 
 import (
-	//"os"
 	"fmt"
 	"bytes"
-	//"time"
 	"github.com/nsqio/go-nsq"
-	//"github.com/spf13/afero"
 
 	"github.com/AidHamza/optimizers-worker/pkg/storage"
 	"github.com/AidHamza/optimizers-worker/pkg/messaging"
@@ -18,6 +15,7 @@ import (
 )
 
 const POOL_MAX_WORKERS int = 4
+const RESULTS_QUEUE_TOPIC string = "operationResult"
 
 var STORAGE_BUCKETS = map[operation.Operation_FileType]string{
 	operation.Operation_JPEG : "jpeg",
@@ -29,39 +27,30 @@ var OPTIMIZER_BUCKETS = map[operation.Operation_FileType]string{
 	operation.Operation_PNG : "optimized-png",
 }
 
-// In-Memory File system holding directory
-// Where we will execute temporary operations
-// on files (Download / Optimize)
-//var AppFs = afero.NewMemMapFs()
-//var OSFs = afero.NewOsFs()
-//var UFS = afero.NewCacheOnReadFs(OSFs, AppFs, 100 * time.Second)
-
 func loop(messageIn chan *nsq.Message) {
 	storageClient := storage.NewClient()
+
+	producerClient, err := messaging.NewProducer(config.App.Messaging.Host, config.App.Messaging.Port)
+	if err != nil {
+		log.Logger.Error("Cannot initialize producer", "PRODUCER_INIT_FAILED", err.Error())
+	}
 
 	pool := pool.New(POOL_MAX_WORKERS)
 
     for msg := range messageIn {
-        operation, err := operation.LoadOperation(msg.Body)
+        operationBuf, err := operation.LoadOperation(msg.Body)
+        defer operationBuf.Reset()
         if err != nil {
         	fmt.Printf("Error in Unmarshal %+v", err)
         }
 
-        fileName := fmt.Sprintf("%d/%s", operation.Id, operation.File)
-        fileReader, err := storageClient.GetObject(STORAGE_BUCKETS[operation.Type], fileName)
+        fileName := fmt.Sprintf("%d/%s", operationBuf.Id, operationBuf.File)
+        fileReader, err := storageClient.GetObject(STORAGE_BUCKETS[operationBuf.Type], fileName)
 		if err != nil {
 			log.Logger.Error("Cannot load the file", "FILE_DOWNLOAD_FAILED", err.Error())
 		}
 		defer fileReader.Close()
 
-		/*err = afero.WriteReader(UFS, "./tmp/" + fileName, fileReader)
-		if err != nil {
-			log.Logger.Error("Cannot save the file", "FILE_SAVE_FAILED", err.Error())
-		}*/
-
-		/*if _, err = os.Stat("./tmp/" + fileName); os.IsNotExist(err) {
-			log.Logger.Error("File not exists", "FILE_NOT_EXISTS", err.Error())
-		}*/
 		fileInfo, _ := fileReader.Stat()
 		fileBuffer := make([]byte, fileInfo.Size)
 		fileReader.Read(fileBuffer)
@@ -72,7 +61,7 @@ func loop(messageIn chan *nsq.Message) {
 			// DEBUG MODE ON
 			handler.EnableDebug(false)
 
-			imgBuf, err := handler.RunCommand(operation.Command[0].Command, operation.Command[0].Flags, fileBuffer)
+			imgBuf, err := handler.RunCommand(operationBuf.Command[0].Command, operationBuf.Command[0].Flags, fileBuffer)
 			fileBuffer = nil
 			if err != nil {
 				log.Logger.Error("Cannot optimize the file", "FILE_OPTIMIZE_FAILED", err.Error())
@@ -82,12 +71,21 @@ func loop(messageIn chan *nsq.Message) {
 			defer b.Reset(imgBuf)
 			imgBuf = nil
 
-			err = storageClient.PutObject(b, OPTIMIZER_BUCKETS[operation.Type], fileName, fileInfo.ContentType)
+			err = storageClient.PutObject(b, OPTIMIZER_BUCKETS[operationBuf.Type], fileName, fileInfo.ContentType)
 			if err != nil {
 				log.Logger.Error("Cannot store optimized file", "FILE_STORE_FAILED", err.Error())
 			}
 
-			fmt.Println("Operation:", operation.Type)
+			operationResult, err := operation.NewResult(operationBuf.Id, operationBuf.File, operation.Result_SUCCESS)
+			if err != nil {
+				log.Logger.Error("Failed to marshal operation result to Protobuf", "RESULT_MARSHAL_FAILED", err.Error())
+			}
+
+			err = producerClient.PublishMessage(RESULTS_QUEUE_TOPIC, operationResult)
+			operationResult = nil
+			if err != nil {
+				log.Logger.Error("Unable to queue result", "RESULT_QUEUE_FAILED", err.Error())
+			}
 		}
 		pool.Schedule(optimizeCMD)
         msg.Finish()
@@ -100,20 +98,8 @@ func main() {
 		log.Logger.Error("Cannot load app configuration", "VIPER_ERROR", err.Error())
 	}
 
-	/*exists, err := afero.DirExists(UFS, "./tmp")
-	if err != nil {
-		log.Logger.Error("Cannot stat operations directory", "TMP_DIR_STAT", err.Error())
-	}
-
-	if exists == false {
-		err = UFS.Mkdir("./tmp", 0755)
-		if err != nil {
-			log.Logger.Error("Cannot create operations directory", "TMP_DIR_STAT_CREATE", err.Error())
-		}
-	}*/
-
 	messageIn := make(chan *nsq.Message)
-	c := messaging.NewConsumer("jpeg", "jpeg_optimization")
+	c := messaging.NewConsumer(config.App.Messaging.Topic, "optimization")
 
 	c.Set("nsqd", ":" + config.App.Messaging.Port)
 	c.Set("concurrency", 15)

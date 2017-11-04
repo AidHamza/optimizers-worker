@@ -36,3 +36,16 @@ message Operation {
 	}
 	repeated Command command = 4;
 }
+
+message Result {
+	uint64 id = 1;
+	string file = 2;
+
+	// Status of the operation
+	enum Status {
+		SUCCESS = 0;
+		FAILED = 1;
+	}
+
+	Status status = 3;
+}
