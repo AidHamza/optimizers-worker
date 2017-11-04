@@ -5,3 +5,8 @@ import:
   version: ^4.2.1
 - package: github.com/nsqio/go-nsq
   version: ^1.0.7
+- package: gopkg.in/inconshreveable/log15.v2
+  version: ^2.13.0
+- package: github.com/minio/minio-go
+  version: ^3.0.3
+- package: github.com/spf13/afero
