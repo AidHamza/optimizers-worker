@@ -1,0 +1,38 @@
+syntax = "proto3";
+package operation;
+
+/*
+This Operation message descrie the operations to be done
+on file and bellow the example how to exploit it
+
+	operation := &op.Operation{}
+	operation.Id = 12
+	operation.File = "hello.jpeg"
+	operation.Type = op.Operation_JPEG
+
+	out, err := proto.Marshal(operation)
+	if err != nil {
+		log.Fatalln("Failed to encode address book:", err)
+	}
+
+	fmt.Printf("ProtoBuf Example : %+v", out)
+*/
+message Operation {
+	uint64 id = 1;
+	string file = 2;
+
+	// FileType detected from API
+	enum FileType {
+		JPEG = 0;
+		PNG = 1;
+	}
+
+	FileType type = 3;
+
+	// Command to perform on the file
+	message Command {
+		string command = 1;
+		repeated string flags = 2;
+	}
+	repeated Command command = 4;
+}
