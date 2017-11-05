@@ -38,14 +38,14 @@ func loop(messageIn chan *nsq.Message) {
 	pool := pool.New(POOL_MAX_WORKERS)
 
     for msg := range messageIn {
-        operationBuf, err := operation.LoadOperation(msg.Body)
-        defer operationBuf.Reset()
-        if err != nil {
-        	fmt.Printf("Error in Unmarshal %+v", err)
-        }
-
 		optimizeCMD := func() {
 
+			operationBuf, err := operation.LoadOperation(msg.Body)
+	        defer operationBuf.Reset()
+	        if err != nil {
+	        	fmt.Printf("Error in Unmarshal %+v", err)
+	        }
+        
 			fileName := fmt.Sprintf("%d/%s", operationBuf.Id, operationBuf.File)
 	        fileReader, err := storageClient.GetObject(STORAGE_BUCKETS[operationBuf.Type], fileName)
 			if err != nil {
@@ -56,7 +56,7 @@ func loop(messageIn chan *nsq.Message) {
 			fileInfo, _ := fileReader.Stat()
 			fileBuffer := make([]byte, fileInfo.Size)
 			fileReader.Read(fileBuffer)
-		
+
 			handler := command.NewHandler()
 
 			// DEBUG MODE ON
