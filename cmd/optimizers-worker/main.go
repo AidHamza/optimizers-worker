@@ -44,18 +44,19 @@ func loop(messageIn chan *nsq.Message) {
         	fmt.Printf("Error in Unmarshal %+v", err)
         }
 
-        fileName := fmt.Sprintf("%d/%s", operationBuf.Id, operationBuf.File)
-        fileReader, err := storageClient.GetObject(STORAGE_BUCKETS[operationBuf.Type], fileName)
-		if err != nil {
-			log.Logger.Error("Cannot load the file", "FILE_DOWNLOAD_FAILED", err.Error())
-		}
-		defer fileReader.Close()
-
-		fileInfo, _ := fileReader.Stat()
-		fileBuffer := make([]byte, fileInfo.Size)
-		fileReader.Read(fileBuffer)
-
 		optimizeCMD := func() {
+
+			fileName := fmt.Sprintf("%d/%s", operationBuf.Id, operationBuf.File)
+	        fileReader, err := storageClient.GetObject(STORAGE_BUCKETS[operationBuf.Type], fileName)
+			if err != nil {
+				log.Logger.Error("Cannot load the file", "FILE_DOWNLOAD_FAILED", err.Error())
+			}
+			defer fileReader.Close()
+
+			fileInfo, _ := fileReader.Stat()
+			fileBuffer := make([]byte, fileInfo.Size)
+			fileReader.Read(fileBuffer)
+		
 			handler := command.NewHandler()
 
 			// DEBUG MODE ON
