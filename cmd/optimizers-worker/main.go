@@ -103,10 +103,10 @@ func main() {
 	c := messaging.NewConsumer(config.App.Messaging.Topic, "optimization")
 
 	c.Set("nsqd", ":" + config.App.Messaging.Port)
-	c.Set("concurrency", 15)
-	c.Set("max_attempts", 10)
-	c.Set("max_in_flight", 1000)
-	c.Set("default_requeue_delay", "15s")
+	c.Set("concurrency", config.App.Messaging.Concurrency)
+	c.Set("max_attempts", config.App.Messaging.MaxAttempts)
+	c.Set("max_in_flight", config.App.Messaging.MaxInFlight)
+	c.Set("default_requeue_delay", config.App.Messaging.DefaultRequeueDelay)
 
 	c.Start(nsq.HandlerFunc(func(msg *nsq.Message) error {
 		messageIn <- msg

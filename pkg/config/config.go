@@ -21,6 +21,10 @@ type nsqConfig struct {
 	Host string
 	Port string
 	Topic string
+	Concurrency int
+	MaxAttempts int
+	MaxInFlight int
+	DefaultRequeueDelay string
 }
 
 var App Config
@@ -38,6 +42,10 @@ func (config *Config) Init() error {
 	config.Messaging.Host = viper.GetString("Messaging.Host")
 	config.Messaging.Port = viper.GetString("Messaging.Port")
 	config.Messaging.Topic = viper.GetString("Messaging.Topic")
+	config.Messaging.Concurrency = viper.GetInt("Messaging.Concurrency")
+	config.Messaging.MaxAttempts = viper.GetInt("Messaging.MaxAttempts")
+	config.Messaging.MaxInFlight = viper.GetInt("Messaging.MaxInFlight")
+	config.Messaging.DefaultRequeueDelay = viper.GetString("Messaging.DefaultRequeueDelay")
 
 	config.Storage.Host = viper.GetString("Storage.Host")
 	config.Storage.Port = viper.GetInt("Storage.Port")

@@ -9,6 +9,10 @@
 	"Messaging": {
 		"Host": "127.0.0.1",
 		"Port": "32772",
-		"Topic": "imgOptim"
+		"Topic": "imgOptim",
+		"Concurrency": 15,
+		"MaxAttempts": 10,
+		"MaxInFlight": 1000,
+		"DefaultRequeueDelay": "15s"
 	}
 }
